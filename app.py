@@ -9,6 +9,101 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
+
+import plotly.graph_objects as go
+
+AMBER = "#D99A55"
+AMBER_LIGHT = "#F0BD83"
+AMBER_DARK = "#A96D32"
+CHART_BG = "#1C211E"
+GRID_COLOR = "#343B35"
+TEXT_COLOR = "#E8EAE6"
+
+VANTAGE_PALETTE = [
+    "#D99A55",  # Signature amber
+    "#F0BD83",  # Champagne amber
+    "#B97835",  # Deep copper
+    "#E8A65B",  # Golden amber
+    "#C98A45",  # Bronze
+    "#F4D2A1",  # Pale gold
+]
+
+def style_vantage_chart(fig):
+    fig.update_layout(
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor=CHART_BG,
+        font=dict(family="Sora, sans-serif", color=TEXT_COLOR),
+        title_font=dict(
+            family="Sora, sans-serif",
+            color=AMBER_LIGHT
+        ),
+        colorway=[
+            "#D99A55",  # Primary amber
+            "#E8BD83",  # Champagne
+            "#A96D32",  # Copper
+            "#F0D6AE",  # Pale gold
+            "#BD8750",  # Muted bronze
+            "#8D775D"   # Dark bronze
+        ],
+        xaxis=dict(
+            gridcolor=GRID_COLOR,
+            zerolinecolor=GRID_COLOR
+        ),
+        yaxis=dict(
+            gridcolor=GRID_COLOR,
+            zerolinecolor=GRID_COLOR
+        ),
+        legend=dict(font=dict(color=TEXT_COLOR)),
+        margin=dict(l=45, r=25, t=55, b=40)
+    )
+
+    # Force distinct VANTAGE amber shades across all traces
+    for i, trace in enumerate(fig.data):
+        color = VANTAGE_PALETTE[i % len(VANTAGE_PALETTE)]
+
+        if trace.type == "scatter":
+            if trace.mode and "lines" in trace.mode:
+                trace.line.color = color
+                trace.line.width = 2.5
+
+            if trace.mode and "markers" in trace.mode:
+                trace.marker.color = color
+                trace.marker.line.color = color
+
+        elif trace.type in ("bar", "histogram"):
+            trace.marker.color = color
+
+    # Use amber for reference lines and chart shapes
+    fig.update_shapes(line_color=AMBER)
+
+    return fig
+
+
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Michroma&display=swap');
+
+.vantage-wordmark {
+    font-family: 'Michroma', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 400;
+    letter-spacing: 5px;
+    color: #D99A55;
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+.vantage-tagline {
+    font-family: 'Sora', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 3px;
+    color: #929992;
+    text-transform: uppercase;
+}
+</style>
+""", unsafe_allow_html=True)
+
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "src"))
 from data_utils import COLUMNS, SENSORS, SETTINGS, load_subset, make_features, label_test
@@ -140,7 +235,12 @@ def metric_card(label, value, suffix=""):
     st.metric(label, f"{value:,.1f}{suffix}" if pd.notna(value) else "â€”")
 
 
-st.title("VANTAGE")
+
+st.markdown("""
+<div class="vantage-wordmark">VANTAGE</div>
+<div class="vantage-tagline">Aircraft Intelligence System</div>
+""", unsafe_allow_html=True)
+
 st.caption("Aircraft engine health monitoring Â· Remaining Useful Life research dashboard")
 st.warning("Research prototype using simulated NASA C-MAPSS data. Predictions are not certified for aircraft operation or maintenance decisions.")
 
@@ -266,6 +366,7 @@ if data_mode == "Recorded C-MAPSS engines" or (data_mode == "Upload engine CSV" 
                     hovermode="x unified",
                     legend_title="",
                 )
+                fig = style_vantage_chart(fig)
                 st.plotly_chart(fig, use_container_width=True)
                 if show_truth:
                     st.caption("The reference trajectory is derived from the supplied NASA test RUL and capped at 125 cycles to match the model's training target. The uncapped final reference value remains shown above.")
@@ -287,6 +388,7 @@ if data_mode == "Recorded C-MAPSS engines" or (data_mode == "Upload engine CSV" 
                 sensor_long = engine_frame.melt(id_vars="cycle", value_vars=chosen_sensors, var_name="Sensor", value_name="Reading")
                 fig = px.line(sensor_long, x="cycle", y="Reading", color="Sensor", title="Sensor trajectories")
                 fig.update_layout(hovermode="x unified")
+                fig = style_vantage_chart(fig)
                 st.plotly_chart(fig, use_container_width=True)
             else:
                 st.info("Select at least one sensor to display its trajectory.")
@@ -344,6 +446,7 @@ if data_mode == "Recorded C-MAPSS engines" or (data_mode == "Upload engine CSV" 
                     )
                     fig_resid.add_vline(x=0, line_dash="dash", line_color="#22c55e")
                     fig_resid.update_layout(bargap=0.08)
+                    fig = style_vantage_chart(fig_resid)
                     st.plotly_chart(fig_resid, use_container_width=True)
                 with right_err:
                     fig_scatter = px.scatter(
@@ -356,6 +459,7 @@ if data_mode == "Recorded C-MAPSS engines" or (data_mode == "Upload engine CSV" 
                         },
                     )
                     fig_scatter.add_hline(y=0, line_dash="dash", line_color="#22c55e")
+                    fig = style_vantage_chart(fig_scatter)
                     st.plotly_chart(fig_scatter, use_container_width=True)
 
                 st.markdown("**Largest per-engine prediction errors**")
@@ -395,6 +499,7 @@ if data_mode == "Recorded C-MAPSS engines" or (data_mode == "Upload engine CSV" 
                 rob_df = pd.DataFrame(rows)
                 st.dataframe(rob_df, hide_index=True, use_container_width=True)
                 fig = px.line(rob_df, x="Noise level", y="MAE", markers=True, title=f"Baseline XGBoost sensitivity Â· {subset}")
+                fig = style_vantage_chart(fig)
                 st.plotly_chart(fig, use_container_width=True)
             else:
                 st.info("The stored multi-seed noise sensitivity experiment covers FD001 and FD004 only.")

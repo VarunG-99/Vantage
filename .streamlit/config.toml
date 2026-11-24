@@ -1,12 +1,25 @@
+
 [theme]
 base = "dark"
-primaryColor = "#38BDF8"
-backgroundColor = "#0B1220"
-secondaryBackgroundColor = "#111C2E"
-textColor = "#E5EEF8"
+primaryColor = "#D99A55"
+backgroundColor = "#111412"
+secondaryBackgroundColor = "#1C211E"
+textColor = "#E8EAE6"
+font = "Sora:https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap"
+headingFont = "Sora:https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap"
+codeFont = "'Space Mono':https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap"
+
+[theme.dark]
+primaryColor = "#D99A55"
+backgroundColor = "#111412"
+secondaryBackgroundColor = "#1C211E"
+textColor = "#E8EAE6"
+
+[theme.light]
+primaryColor = "#B87532"
+backgroundColor = "#F5F6F3"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#202521"
 
 [server]
 headless = true
-
-[browser]
-gatherUsageStats = false
